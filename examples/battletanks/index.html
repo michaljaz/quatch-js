@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script src="../../libs/firebase.js"></script>
+	<script src="../../libs/jq.min.js"></script>
+	<script src="../../libs/eshj.js"></script>
+	<script src="../../libs/tween.js"></script>
+	<script src="../../src/quatch.js"></script>
+</head>
+<body>
+	<script>
+//Bundle.js
+
+var workspace=new Q.Workspace("Battletanks")
+	.setBackground("Gray")
+	.loadTextures({
+		"czolg":"imgs/czolg.png",
+		"kola":"imgs/kolox.png",
+		"lufa":"imgs/lufa.png",
+		"title":"imgs/battletanks.png",
+		"opponent":"imgs/opponent.png",
+		"stone":"imgs/stone.png",
+		"youlose":"imgs/youlose.png",
+		"bullet":"imgs/bullet.png"
+	})
+	.animateTicker()
+workspace.init(function (){
+	title=new Q.Sprite(workspace)
+		.setCostume("title")
+		.scale(0.5)
+		.css("background","gray")		
+
+	new Q.Queue()
+		.sleep(500)
+		.add(function (){
+			var style={blur:0}
+			var tween=new TWEEN.Tween(style)
+				.to({blur:70},500)
+				.onUpdate(() => {
+		     		title.css("filter",`blur(${style.blur}px)`)
+		        })
+		        .start()
+		})
+		.sleep(500)
+		.add(function (){
+			title.hide()
+			game()
+		})
+		.start()
+})
+
+function game(){
+	//Sprites setup
+	{
+		stone=new Q.Sprite(workspace)
+			.setCostume("stone")
+			.scale(0.15)
+
+		kola=new Q.Sprite(workspace)
+			.setCostume("kola")
+			.scale(0.2)
+
+		czolg=new Q.Sprite(workspace)
+			.setCostume("czolg")
+			.scale(0.2)
+			
+		lufa=new Q.Sprite(workspace)
+			.setCostume("lufa")
+			.scale(0.2)
+		
+		op1=new Q.Sprite(workspace)
+			.setCostume("opponent")
+			.scale(0.12)
+			.moveTo(100,100)
+			.setRotationAspect(180)
+			.css("opacity","0.5")
+
+		nab=new Q.Sprite(workspace)
+			.setCostume("bullet")
+			.scale(0.02)
+			.hide()
+
+
+		end=new Q.Sprite(workspace)
+			.setCostume("youlose")
+			.hide()
+	}
+	
+	stone.moveTo(...workspace.randomPlace())
+
+	workspace
+		.setBackground("Green")
+
+		.ticker(function (){
+			//Copy pos
+			{
+				czolg.joinAspect(lufa,-5)
+				czolg.joinAspect(kola,-5)
+			}
+			
+			czolg.move(5)
+			lufa.rotationTo(...op1.getPosition())
+
+			//Tanks algorithm
+			{
+				op1
+					.rotationTo(...czolg.getPosition())
+					.move(3)
+			}
+			
+			//Detect collisions with tanks and stone
+			{
+				if(czolg.hit(stone) ||
+					czolg.hit(op1)){
+					theend()
+				}
+			}
+			
+		})
+	function theend(){
+		workspace
+			.remove(czolg)
+			.remove(lufa)
+			.remove(kola)
+			.remove(stone)
+			.remove(op1)
+			.remove(nab)
+			.setBackground("Black")
+		end.show()
+	}
+	$(document).keydown(function (z){
+		if(z.key=="w"){
+			czolg.rotation=0
+		}else if(z.key=="s"){
+			czolg.rotation=180
+		}else if(z.key=="a"){
+			czolg.rotation=270
+		}else if(z.key=="d"){
+			czolg.rotation=90
+		}
+	})
+
+
+}
+
+
+
+
+	</script>
+</body>
+</html>
