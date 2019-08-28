@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<script src="https://www.gstatic.com/firebasejs/5.3.0/firebase.js"></script>
+	<script src="../../libs/firebase.js"></script>
 	<script src="../../libs/jq.min.js"></script>
 	<script src="../../libs/eshj.js"></script>
 	<script src="../../libs/tween.js"></script>
-	<script src="../../quatch.js"></script>
+	<script src="../../src/quatch.js"></script>
 </head>
 <body>
 	<script>
@@ -13,8 +13,8 @@
 var workspace=new Q.Workspace("Sniper.io")
 	.setBackground("green")
 	.loadTextures({
-		"player":"imgs/sniper.png",
-		"bullet":"imgs/bullet.png"
+		"player":"sniper.png",
+		"bullet":"bullet.png"
 
 	})
 	.animateTicker()
