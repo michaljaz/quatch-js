@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script src="https://www.gstatic.com/firebasejs/5.3.0/firebase.js"></script>
+	<script src="../../libs/jq.min.js"></script>
+	<script src="../../libs/eshj.js"></script>
+	<script src="../../libs/tween.js"></script>
+	<script src="../../quatch.js"></script>
+</head>
+<body>
+	<script>
+//Bundle.js
+var workspace=new Q.Workspace("Sniper.io")
+	.setBackground("green")
+	.loadTextures({
+		"player":"imgs/sniper.png",
+		"bullet":"imgs/bullet.png"
+
+	})
+	.animateTicker()
+workspace.init(function(){
+	//Setup player
+	{
+		player=new Q.Sprite(workspace)
+			.setCostume("player")
+			.scale(0.15)
+		player.stopAtBound=false
+		fake=new Q.Sprite(workspace)
+		fakex=new Q.Sprite(workspace)
+		bullet=new Q.Sprite(workspace).setCostume("bullet").scale(0.03)
+		bullet.stopAtBound=false
+		bullet.isshoting=false
+		bullet.shot=function(){
+			if(!bullet.isshoting){
+				bullet.isshoting=true
+				var dist={dist:0}
+				var way=0
+				new TWEEN.Tween(dist)
+					.to({dist:1000},500)
+					.onUpdate(()=>{
+						bullet.move(dist.dist-way)
+						way=dist.dist
+						if(dist.dist==1000){
+							bullet.isshoting=false
+						}
+					})
+					.start()
+				
+			}
+		}
+		
+		
+		fakex.dist=0;
+		fake.randomPos=function (){
+			var los_x=Math.random()*workspace.t_width
+			var los_y=Math.random()*workspace.t_height
+			fake.moveTo(los_x, los_y)
+		}
+		fake.checkBound=function (){
+			var x=this.position.x
+			var y=this.position.y
+			var w=workspace.t_width
+			var h=workspace.t_height
+			var pom=20;
+			if(x<pom){
+				this.position.x=pom
+			}
+			if(y<pom){
+				this.position.y=pom
+			}
+			if(x>w-pom){
+				this.position.x=w-pom
+			}
+			if(y>h-pom){
+				this.position.y=h-pom
+			}
+		}
+
+	}
+	//Terrain
+	{
+		this.t_width=2000
+		this.t_height=2000
+		workspace.terrain=function (){
+			this.ctx.fillStyle="Gray"
+			this.ctx.fillRect(0, 0, this.width, this.height)
+			this.ctx.fillStyle="green"
+			this.t_width=2000
+			this.t_height=2000
+			var xs=-this.cameraview.x+this.width/2
+			var ys=-this.cameraview.y+this.height/2
+			this.ctx.fillRect(xs, ys, this.t_width, this.t_height)
+			this.ctx.lineWidth=5
+			this.ctx.strokeRect(xs, ys, this.t_width, this.t_height)
+
+			var k=50;
+
+			for(var i=0;i<this.t_width/k;i++){
+				this.ctx.beginPath()
+				this.ctx.lineWidth=0.15
+				this.ctx.moveTo(xs+i*k,ys)
+				this.ctx.lineTo(xs+i*k,ys+this.t_height)
+				this.ctx.stroke()
+			}
+			for(var i=0;i<this.t_height/k;i++){
+				this.ctx.beginPath()
+				this.ctx.lineWidth=0.15
+				this.ctx.moveTo(xs,ys+i*k)
+				this.ctx.lineTo(xs+this.t_width,ys+i*k)
+				this.ctx.stroke()
+			}
+		}
+	}
+	fake.randomPos()
+	var shiftdown=false
+	var isanima=false
+	workspace.tickerAfter(function(){
+
+		
+
+		if(Q.askeys[16]){
+			speed=1
+		}else{
+			speed=5
+		}
+		if(Q.askeys[87]){
+			fake.position.y-=speed;
+		}
+		if(Q.askeys[83]){
+			fake.position.y+=speed;
+		}
+		if(Q.askeys[65]){
+			fake.position.x-=speed;
+		}
+		if(Q.askeys[68]){
+			fake.position.x+=speed;
+		}
+		fake
+			.rotationTo(Q.mouse.x,Q.mouse.y)
+			.joinAspect(player,-35,-10,-90)
+		fake
+			.joinAspect(fakex,-fakex.dist,0,0)
+		if(!bullet.isshoting){
+			fake.joinAspect(bullet, -27, -7, 0)
+			if(Q.mouse.left){
+				bullet.shot()
+				bullet.rotation=fake.rotation
+			}
+		}
+
+
+		fake.checkBound()
+		
+		workspace.setCamera(...fakex.getPosition())
+
+		if(Q.askeys[16]){
+			if(!isanima){
+				if(shiftdown==false){
+					var obj={obj:fakex.dist}
+					isanima=true
+					new Q.Queue()
+						.add(function (){
+							new TWEEN.Tween(obj)
+								.to({obj:fakex.distanceTo(Q.mouse.x,Q.mouse.y)/3},200)
+								.easing(TWEEN.Easing.Quadratic.Out)
+								.onUpdate(()=>{
+									fakex.dist=obj.obj
+								})
+								.start()
+						})
+						.sleep(200)
+						.add(function (){
+							isanima=false
+						})
+						.start()
+
+					
+				}else{
+					fakex.dist=fakex.distanceTo(Q.mouse.x,Q.mouse.y)/3
+				}
+				shiftdown=true;
+			}
+		}else{
+			if(!isanima){
+				if(shiftdown==true){
+					var obj={obj:fakex.dist}
+					isanima=true
+					new Q.Queue()
+						.add(function (){
+							new TWEEN.Tween(obj)
+								.to({obj:0},200)
+								.easing(TWEEN.Easing.Quadratic.Out)
+								.onUpdate(()=>{
+									fakex.dist=obj.obj
+								})
+								.start()
+						})
+						.sleep(200)
+						.add(function (){
+							isanima=false
+						})
+						.start()
+
+					
+				}
+				
+				shiftdown=false
+			}
+			
+		}
+		
+		this.terrain()
+
+	})
+})
+
+
+
+	</script>
+</body>
+</html>
