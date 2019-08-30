@@ -315,13 +315,16 @@ var Q={
 			var gen=w || s || a || d
 			return {ok:gen,ex:{top:w,bottom:s,right:d,left:a}}
 		}
-		this.init=function (f){
+		this.initOffline=function (f){
 			this.initf=f
 		}
+		this.initOnline=function (f){
+			this.inito=f
+		}	
 		this.randomPlace=function (){
 			return [Math.random()*this.width-this.width/2,Math.random()*this.height-this.height/2]
 		}
-		this.loadTextures=function (map,f=null){
+		this.loadTextures=function (map){
 			var ile=0
 			Object.keys(map).forEach(function (z){
 				console.warn("Image '"+map[z]+"' loaded as "+z)
@@ -335,15 +338,17 @@ var Q={
 					ile2++
 					if(ile2==ile){
 						try{
+							try{
+								_this.initf()
+							}catch(e){}
 							var czy=false
 							Q.ref().on('value',function (abc) {
 								if(abc.val()[0]==0 && czy==false){
 									czy=true
-									if(f==null){
-										_this.initf()
-									}else{
-										f()
-									}
+									try{
+										_this.inito()
+									}catch(e){}
+									
 								}
 							})
 							
