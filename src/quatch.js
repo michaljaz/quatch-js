@@ -1,12 +1,13 @@
 //Quatch.js dev
 
 var Q={
-	Painter:function (width,height){
+	Draw:function (width,height){
 		this.canvas=document.createElement("canvas")
 		this.canvas.width=width
 		this.canvas.height=height
 		this.ctx=this.canvas.getContext("2d")
-		this.data=function (){
+		this.edit=function (f){
+			f(this.ctx)
 			return {data:this.canvas.toDataURL(),width:this.canvas.width,height:this.canvas.height}
 		}
 	},
@@ -18,15 +19,13 @@ var Q={
 			return localStorage.getItem(key)
 		}
 	},
-	ref:function (){
-		return Q.firebase.database().ref()
-	},
+	ref:"",
 	online:{
 		handler:"You have to login to use Firebase plugin",
 		login:function (login){
 			Q.online.loginvar=login
 			if(Q.online.loginvar!=""){
-				Q.online.handler=Q.ref().child(Q.online.loginvar)
+				Q.online.handler=Q.ref.child(Q.online.loginvar)
 			}
 		},
 		loginvar:""
@@ -58,7 +57,8 @@ var Q={
 	},
 	firebaseConfig:function (){
 		Q.firebaseConfig = {apiKey: "AIzaSyDyAukafy9CBiSxLjDu_XXh9OBk0bBWUSE",authDomain: "private-notes-d58ba.firebaseapp.com",databaseURL: "https://private-notes-d58ba.firebaseio.com",projectId: "private-notes-d58ba",storageBucket: "private-notes-d58ba.appspot.com",messagingSenderId: "648390504938",appId: "1:648390504938:web:76f941dd0ca1d016"};
-		firebase.initializeApp(firebaseConfig);
+		firebase.initializeApp(Q.firebaseConfig);
+		Q.ref=firebase.database().ref()
 	},
 	rotateImageData:function (image , rotation)
 	{
@@ -143,7 +143,12 @@ var Q={
 			clone.position.x=this.position.x
 			clone.position.y=this.position.y
 			clone.visible=this.visible
-			clone.style=this.style
+			clone.style={}
+			var _this=this
+			Object.keys(this.style).forEach(function (z){
+				clone.style[z]=_this.style[z]
+
+			})
 			clone.stopAtBound=this.stopAtBound
 			clone.rotation=this.rotation
 			clone.setCostume(this.costume)
