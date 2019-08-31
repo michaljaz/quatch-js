@@ -1,7 +1,15 @@
-var firebaseConfig = {apiKey: "AIzaSyDyAukafy9CBiSxLjDu_XXh9OBk0bBWUSE",authDomain: "private-notes-d58ba.firebaseapp.com",databaseURL: "https://private-notes-d58ba.firebaseio.com",projectId: "private-notes-d58ba",storageBucket: "private-notes-d58ba.appspot.com",messagingSenderId: "648390504938",appId: "1:648390504938:web:76f941dd0ca1d016"};
-firebase.initializeApp(firebaseConfig);
+//Quatch.js dev
 
 var Q={
+	Painter:function (width,height){
+		this.canvas=document.createElement("canvas")
+		this.canvas.width=width
+		this.canvas.height=height
+		this.ctx=this.canvas.getContext("2d")
+		this.data=function (){
+			return {data:this.canvas.toDataURL(),width:this.canvas.width,height:this.canvas.height}
+		}
+	},
 	offline:{
 		save:function (key,value){
 			localStorage.setItem(key,value)
@@ -11,15 +19,14 @@ var Q={
 		}
 	},
 	ref:function (){
-		return firebase.database().ref()
+		return Q.firebase.database().ref()
 	},
 	online:{
+		handler:"You have to login to use Firebase plugin",
 		login:function (login){
 			Q.online.loginvar=login
-		},
-		handler:function (){
 			if(Q.online.loginvar!=""){
-				return Q.ref().child(Q.online.loginvar)
+				Q.online.handler=Q.ref().child(Q.online.loginvar)
 			}
 		},
 		loginvar:""
@@ -48,6 +55,10 @@ var Q={
 		}
 		return rotation%360
 
+	},
+	firebaseConfig:function (){
+		Q.firebaseConfig = {apiKey: "AIzaSyDyAukafy9CBiSxLjDu_XXh9OBk0bBWUSE",authDomain: "private-notes-d58ba.firebaseapp.com",databaseURL: "https://private-notes-d58ba.firebaseio.com",projectId: "private-notes-d58ba",storageBucket: "private-notes-d58ba.appspot.com",messagingSenderId: "648390504938",appId: "1:648390504938:web:76f941dd0ca1d016"};
+		firebase.initializeApp(firebaseConfig);
 	},
 	rotateImageData:function (image , rotation)
 	{
@@ -80,8 +91,18 @@ var Q={
 		ctx.translate(-b/2,-a/2)
 		ctx.drawImage(image,0,0,b,a)
 		ctx.restore()
-		return {data:canvasx.toDataURL(),width:B,height:A}
+		try{
+			return {data:canvasx.toDataURL(),width:B,height:A}
+		}catch(e){
+			if(Q.imgDataE==false){
+				console.error("Quatch.js is only running on server")
+				Q.imgDataE=true
+			}
+			return {data:"",width:0,height:0}
+		}
+	
 	},
+	imgDataE:false,
 	uuid:function (){
 	  	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
 	    	var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -239,7 +260,7 @@ var Q={
 	Workspace:function (title="Q.js Game"){
 		this.width=window.innerWidth;
 		this.height=window.innerHeight;
-		
+		this.firebaseSupport=false
 		this.sprites=[]
 		$("body").append("<div class='quatchjs'></div>")
 		$("body,html").css("margin","0px")
@@ -260,6 +281,7 @@ var Q={
 		$("title").text(title)
 		$("head").append("<link rel='icon' href=''>")
 		$("link").attr("href","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAACJVBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAIAAANAAAQAAAPAAAbAABVAACCAACiAAC3AADAAAC/AAC0AACgAACDAABXAAAgAAAVAADYAADvAAD9AAD/AADwAADaAACRAAAaAAADAAA1AADRAAD+AADyAADqAADlAADoAAD7AADWAABBAAAEAAAJAABuAADsAAD8AADMAABNAAArAAAYAAAnAABEAAB1AADDAAD5AAB7AAAKAAACAABlAADtAAAfAAB6AADzAABqAADdAAD0AABTAADiAAAwAAClAACBAABzAAC5AAAFAAA+AAAXAABnAABIAADCAADbAADnAAAMAADSAADpAAAqAABLAADrAABrAAD3AABtAABFAAB0AABKAAAjAACJAACOAAA3AAAcAACUAAAHAAAxAACXAACLAAA8AAAdAAAGAAB+AAAuAACEAABoAAD2AAB5AABeAAD6AABsAABHAAC2AACoAADxAADZAAATAAASAADkAAAZAACjAAB8AACmAAAzAADhAAApAAAvAAAsAACTAACYAACcAACHAAB4AAALAABvAADHAABWAACpAAA6AAA5AADjAABCAACkAABOAAAWAABYAACnAADEAAAiAAB2AAA2AACeAAC+AADOAAAtAACFAADgAAD4AABpAABwAADKAACAAAAeAADFAACKAABGAAArflM7AAAAEHRSTlMAClLA9f7DV5T2+RBdxMdiVlt3lwAAAopJREFUSMeV1vlfEkEUAPBB8QA8ZiWVikwMHgK1SCgYpVbkdlBRFkp20W1WdkqXqYVJ932b3WlZ2d3f1zPoE7Czsft+nH3fnX1vZ2aXEFVOrjqPyog8dX6BihBVoUZOdiK0hTqSoyCfUk0RyVWST2kxUSsDGiKr3pTKCWuUK9NPK9eXcaxrDFBRaZg+Y6ZxVtXsapMMUGOYY7bAn7BYa232LMAxdx6Pmc46l2u+1Q3A1zd4/ge8jQsAfAsNi5rszS2Llyz1A1iXtUoDYfkKvKltZfKmnH0VThJY7ZAEpjUAaxtTR4JmHtatlwJcG4B/gzf1smdjACDULgE68JFrw+k1lhsB3EE2mJqA35TZxk7s8WYHE5i2AGzdlgk82wEiO5hg5y6ANioKAzaikgl27wHYKwb7ePB1sQBnwHe8Xwy63cAfcDCA4yAun0Ni0OMEOHyEATw2BEcZwAxwzMua4TiCE2LQi6XZoqyiT2LHg2Jwigf+tMACZ84C9InBOYD+AWZbB+sAzovBBYDYIBP0DOErupiZP4xNil9iAnoZq76Skc/14eBVygbXsIjrN9LBTVxgsVsSgLuN+/OOPjXfexf33D0qAWjzEA/u+w/+DbQ+xHXxqEISCI8jOMeTkeSeFp5W4f1Hn3GSgEar8bVa4s9fvOTau1+9jvtwLzSknQGig2ykvj9xiCXOMv+bpoyETEDfjhmdPCQj1hWm2QAVmscH3r2fcE3N4Q99yA7+9rjl46dJHiKfhwV5ACP8ZQLPka9j416ZgHp6vwWAnxw1fpcJ8ME6fsQsYBRkA1wcnT9Dv+Q+UiKiNamfCOUfRcWf3XxloIQUaJXka0uV/5wQXVGxRt7vj6akVEd+A+kK7KsQ5KM3AAAAAElFTkSuQmCC")
+		console.clear()
 		console.info("'"+title+"' by Quatch.js (Workspace "+this.width+"x"+this.height+") ")
 		this.ctx=document.querySelector("canvas").getContext("2d")
 		this.ctx.fillStyle="White"
@@ -307,6 +329,17 @@ var Q={
 			delete Q.keys[z.key]
 			delete Q.askeys[z.keyCode]
 		})
+		this.loadFirebase=function (login){
+			if(navigator.onLine==false){
+				console.error("Firebase error: You are offline")
+			}else{
+				Q.firebaseConfig()
+				this.firebaseSupport=true
+				Q.online.login(login)
+			}
+			
+			return this
+		}
 		this.hitBound=function (sprite){
 			var w=$(".rot_"+sprite.uuid).objectHitTest({"object":$("#top_bound"), "transparency":true});
 			var s=$(".rot_"+sprite.uuid).objectHitTest({"object":$("#bottom_bound"), "transparency":true});
@@ -315,11 +348,8 @@ var Q={
 			var gen=w || s || a || d
 			return {ok:gen,ex:{top:w,bottom:s,right:d,left:a}}
 		}
-		this.initOffline=function (f){
-			this.initf=f
-		}
-		this.initOnline=function (f){
-			this.inito=f
+		this.init=function (f){
+			this.initFunction=f
 		}	
 		this.randomPlace=function (){
 			return [Math.random()*this.width-this.width/2,Math.random()*this.height-this.height/2]
@@ -337,22 +367,22 @@ var Q={
 				$(`#tex_${z}`).on("load",function (){
 					ile2++
 					if(ile2==ile){
-						try{
-							try{
-								_this.initf()
-							}catch(e){}
+						if(_this.supportFirebase){
 							var czy=false
 							Q.ref().on('value',function (abc) {
 								if(abc.val()[0]==0 && czy==false){
 									czy=true
 									try{
-										_this.inito()
+										_this.initFunction()
 									}catch(e){}
 									
 								}
 							})
-							
-						}catch(e){}
+						}else{
+							try{
+								_this.initFunction()
+							}catch(e){}
+						}
 						
 					}
 				})
@@ -439,7 +469,12 @@ var Q={
 					img.css("transform","rotate("+(sprite.rotation+sprite.rotationAspect)+"deg)")
 					img.attr("src",document.querySelector("#tex_"+sprite.costume).src)
 					if(sprite.collisionUpdate){
-						var imgData=Q.rotateImageData(document.querySelector(".img_"+sprite.uuid),sprite.rotation+sprite.rotationAspect);
+						try{
+							var imgData=Q.rotateImageData(document.querySelector(".img_"+sprite.uuid),sprite.rotation+sprite.rotationAspect);
+						}catch(e){
+							console.error("Pls run Quatch on server")
+						}
+						
 						var rot=$(".rot_"+sprite.uuid);
 
 						rot.css("width",imgData.width)
