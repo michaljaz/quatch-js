@@ -1,0 +1,112 @@
+
+<!DOCTYPE html>
+<html>
+	<script src="../../libs/jq.min.js"></script>
+	<script src="../../libs/eshj.js"></script>
+	<script src="../../libs/tween.js"></script>
+	<script src="../../src/quatch.js"></script>
+</head>
+<body>
+	<script>
+//Bundle.js
+var workspace=new Q.Workspace("Snake.io")
+	.setBackground("green")
+	.loadTextures({
+		"snake":new Q.Draw(20,20).edit(function (ctx){ctx.fillRect(0,0,20,20)}).data,
+		"apple":"https://cdn.glitch.com/e6274727-39a1-4c54-9a99-77630d3615f6%2Fmoomoo_skin1.png?v=1584173255696"
+	})
+	.animateTicker()
+
+workspace.init(function(){
+	var points=0
+	//apple
+	apple=new Q.Sprite(workspace)
+		.setCostume("apple")
+		.scale(0.08)
+	apple.ate=function(){
+		var rp=workspace.randomPlace()
+		this.moveTo(rp[0]-rp[0]%20,rp[1]-rp[1]%20)
+	}
+	//Debugger
+	{
+		var deb=new Q.Debugger()
+	}
+	//snake
+	Snake=new function (){
+		this.change_x=20
+		this.change_y=0
+		this.segments=[]
+		this.pro=new Q.Sprite(workspace)
+			.setCostume("snake")
+			.moveTo(0, 0)
+			.hide()
+		this.pro.stopAtBound=false
+		this.addPoc=function (){
+
+			var newSeg=this.pro.clone()
+			newSeg.show()
+			try{
+				newSeg.moveTo(...this.segments[0].getPosition())
+			}catch(e){}
+			
+			this.segments.unshift(newSeg)
+			newSeg.position.x+=this.change_x
+			newSeg.position.y+=this.change_y
+		}
+		this.remKon=function (){
+			workspace.remove(this.segments[this.segments.length-1])
+			this.segments.pop()
+		}
+		for(var i=0; i<5; i++){
+			this.addPoc()
+		}
+	}
+	setInterval(function (){
+		if(Q.askeys[37]){//left
+			if(Snake.change_x!=20){
+				Snake.change_x=-20
+				Snake.change_y=0
+			}
+		}else if(Q.askeys[38]){//up
+			if(Snake.change_y!=20){
+				Snake.change_x=0
+				Snake.change_y=-20
+			}
+		}else if(Q.askeys[39]){//right
+			if(Snake.change_x!=-20){
+				Snake.change_x=20
+				Snake.change_y=0
+			}
+		}else if(Q.askeys[40]){//down
+			if(Snake.change_y!=-20){
+				Snake.change_x=0
+				Snake.change_y=20
+			}
+		}
+		Snake.addPoc()
+		Snake.remKon()
+	},100)
+	workspace.ticker(function() {
+		deb.update({
+			points:points
+		})
+		//control
+		
+		//apple
+		if(Snake.segments[0].hit(apple)){
+			
+			apple.ate()
+			points+=1
+			Snake.addPoc()
+			console.log("Points: "+points)
+		}
+		
+	})
+	console.log("INIT SCRIPT LOADED")
+})
+
+	</script>
+</body>
+</html>
+
+
