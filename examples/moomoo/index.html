@@ -1,0 +1,223 @@
+//Bundle.js
+
+var workspace=new Q.Workspace("Moomoo.io")
+	.setBackground("#007d15")
+	.loadTextures({
+		"player":"https://cdn.glitch.com/e6274727-39a1-4c54-9a99-77630d3615f6%2Fmoomoo_player.png?v=1584173154441",
+		"hammer":"https://cdn.glitch.com/e6274727-39a1-4c54-9a99-77630d3615f6%2Fmoomoo_hammer.png?v=1584173288031",
+		"skin1":"https://cdn.glitch.com/e6274727-39a1-4c54-9a99-77630d3615f6%2Fmoomoo_skin1.png?v=1584173255696",
+		"sapling":"https://cdn.glitch.com/e6274727-39a1-4c54-9a99-77630d3615f6%2Fsapling.png?v=1584173160048"
+	})
+	.animateTicker()
+
+
+workspace.init(function (){
+	//Setup skin
+	{
+		hammer=new Q.Sprite(workspace)
+			.setCostume("hammer")
+			.scale(0.40)
+		player=new Q.Sprite(workspace)
+			.setCostume("player")
+			.scale(0.12)
+		skin=new Q.Sprite(workspace)
+			.setCostume("skin1")
+			.scale(0.3)
+			.moveTo(100,100)
+
+		hammer.stopAtBound=false
+		player.stopAtBound=false
+		skin.stopAtBound=false
+		skin.bit_aspect=0
+		skin.bit_acc=false
+		skin.bite=function (){
+			if(!this.bit_acc){
+				var collected=false;
+				this.bit_acc=true
+				var xd={xd:0}
+				var _this=this
+				new TWEEN.Tween(xd)
+					.to({xd:-100},100)
+					.easing(TWEEN.Easing.Quadratic.Out)
+					.onUpdate(() => {
+			     		_this.bit_aspect=xd.xd
+			     		if(hammer.hit(sapling) && collected==false){
+			     			collected=true
+		     				sapling.shake(_this)
+		     			}
+			     		if(xd.xd==-100){
+			     			
+			     			t2.start()
+			     		}
+			        })
+			        .start()
+			    t2=new TWEEN.Tween(xd)
+			    	.to({xd:0},300)
+			    	.easing(TWEEN.Easing.Quadratic.Out)
+			    	.onUpdate(()=>{
+			    		_this.bit_aspect=xd.xd
+			    		if(xd.xd==0){
+			    			new Q.Queue()
+			    				.sleep(100)
+			    				.add(function (){
+			    					_this.bit_acc=false
+			    				})
+			    				.start()
+			    		}
+			    	})
+			}
+			return this
+		}
+		skin.checkSapling=function (distance){
+			var dist=skin.distanceTo(...sapling.getPosition())
+			if(dist<=distance){
+				var rot=skin.rotation
+				skin
+					.rotationTo(...sapling.getPosition())
+					.rotateRight(180)
+					.move(distance-dist)
+				skin.rotation=rot
+			}
+			return this
+		}
+		skin.rotbit=function (){
+			this.rotationTo(Q.mouse.x,Q.mouse.y)
+			this.rotation+=this.bit_aspect
+			return this
+		}
+		skin.checkBound=function (){
+			var x=this.position.x
+			var y=this.position.y
+			var w=workspace.t_width
+			var h=workspace.t_height
+			var pom=25
+			if(x<pom){
+				this.position.x=pom
+			}
+			if(y<pom){
+				this.position.y=pom
+			}
+			if(x>w-pom){
+				this.position.x=w-pom
+			}
+			if(y>h-pom){
+				this.position.y=h-pom
+			}
+			return this
+		}
+	}
+	//Debugger
+	{
+		deb=new Q.Debugger().hide()
+	}
+	//Setup sapling
+	{
+		sapling=new Q.Sprite(workspace).setCostume("sapling").scale(0.4).moveTo(300,300)
+		sapling.shake=function (sprite){
+			console.log("Collected")
+
+			this.rotationTo(...sprite.getPosition())
+			var rot_1=this.rotation
+			var rot_2=this.rotation+=180
+			this.rotation=0;
+			var _this=this
+			var far={far:0}
+			var farx=0
+			new TWEEN.Tween(far)
+				.to({far:10},50)
+				.easing(TWEEN.Easing.Quadratic.Out)
+				.onUpdate(()=>{
+					_this.rotation=rot_2
+					_this.move(far.far-farx)
+					_this.rotation=0
+					farx=far.far
+					if(far.far==10){
+						far.far=0;
+						farx=0;
+						t2.start()
+					}
+				})
+				.start()
+			var t2=new TWEEN.Tween(far)
+				.to({far:10},100)
+				.easing(TWEEN.Easing.Quadratic.Out)
+				.onUpdate(()=>{
+					_this.rotation=rot_1
+					_this.move(far.far-farx)
+					_this.rotation=0
+					farx=far.far
+				})
+			return this
+		}
+	}
+	//Terrain generation
+	{
+		this.updateTerrain=function (){
+
+			var xs=-this.cameraview.x+this.width/2
+			var ys=-this.cameraview.y+this.height/2
+			this.t_width=2000
+			this.t_height=2000
+			this.ctx.fillStyle="Gray"
+			this.ctx.fillRect(0,0,this.width,this.height)
+			this.ctx.fillStyle="Green"
+			this.ctx.fillRect(xs,ys,this.t_width,this.t_height)
+			this.ctx.lineWidth=6
+			this.ctx.strokeStyle="Black"
+			this.ctx.strokeRect(xs,ys,this.t_width,this.t_height)
+			var k=50;
+
+			//krate
+			{
+				for(var i=0;i<this.t_width/k;i++){
+					this.ctx.beginPath()
+					this.ctx.lineWidth=2
+					this.ctx.strokeStyle="rgba(0,0,0,0.1)"
+					this.ctx.moveTo(xs+i*k,ys)
+					this.ctx.lineTo(xs+i*k,ys+this.t_height)
+					this.ctx.stroke()
+				}
+				for(var i=0;i<this.t_height/k;i++){
+					this.ctx.beginPath()
+					this.ctx.strokeStyle="rgba(0,0,0,0.1)"
+					this.ctx.lineWidth=2
+					this.ctx.moveTo(xs,ys+i*k)
+					this.ctx.lineTo(xs+this.t_width,ys+i*k)
+					this.ctx.stroke()
+				}
+			}
+			return this
+			
+		}
+	}
+	
+	workspace.ticker(function (){
+		//skin movement
+		{
+			var movement=6
+			if(Q.keys["w"]){skin.position.y-=movement}
+			if(Q.keys["s"]){skin.position.y+=movement}
+			if(Q.keys["a"]){skin.position.x-=movement}
+			if(Q.keys["d"]){skin.position.x+=movement}
+			
+			deb.update({x:skin.position.x,y:skin.position.y})
+		}
+		//skin rotation and position
+		{
+			skin
+				.checkBound()
+				.checkSapling(110)
+				.rotbit()
+				.joinAspect(hammer,-27,-10,-90)
+				.joinAspect(player,-1,0,-180)
+			workspace.setCamera(skin.position.x,skin.position.y)
+		}
+		//skin bite
+		{
+			if(Q.mouse.left){skin.bite()}
+		}
+		this.updateTerrain()
+		
+	})
+
+})
